@@ -521,77 +521,77 @@ class TestDataset(Dataset):
         #sequence填充可以最后统一实现
         for index in tqdm(range(len(self.text))):
             current_text = text[index]
-            #print('111current_text = 111')
-            #print(current_text)
-            #print('111111111111111111111')
+            #print('current_text:\t', current_text, len(current_text))
             current_character = characters[index]
             current_token = tokenizer.tokenize(current_text)
             current_str_index = inv_new_content_dict[current_text]
-            
+            current_str_index_bak = inv_new_content_dict[current_text]
             current_key_index = dict_keys_index[current_str_index]
-            #current_str_index = '01171_0001_A_0002',
-            #current_key_index = 1
+            current_key_index_bak = dict_keys_index[current_str_index]
+            # 同一幕中所有上文拼在一起
+            lcs_lst = []
+
             pre_current_key_index = current_key_index
             pre_current_key_text = current_text
-            #print('!!!pre_current_key_index = !!!')
-            #print(pre_current_key_index)
-            #print('!!!pre_current_key_text = !!!')
-            #print(pre_current_key_text)
             pre_content = ''
             #前面一个语句对应的索引以及文本内容
-            
-            
-            if pre_content == '':
-            #找到上一句
-                current_str_index = inv_new_content_dict[current_text]
-                current_key_index = dict_keys_index[current_str_index]
-                while current_key_index != -1 and new_content_dict[keys[current_key_index]] == current_text:
-                    current_key_index = current_key_index-1
-                if current_key_index == -1:
+            num = 0
+            while True:
+                new_current_key_index = pre_current_key_index
+                new_current_key_text = pre_current_key_text
+                while new_current_key_index != -1 and new_content_dict[keys[new_current_key_index]] == new_current_key_text:
+                    new_current_key_index = new_current_key_index-1
+                if new_current_key_index == -1:
                     pre_content = ''
-                else:
-                    pre_content = new_content_dict[keys[current_key_index]]
-                #找到前面去重之后的语句内容
-                new_str_index = keys[current_key_index]
-                current_str_index = current_str_index.split('_')
-                new_str_index = new_str_index.split('_')
-                if current_str_index[0] != new_str_index[0]:
-                    pre_content = ''
-                if current_str_index[1] != new_str_index[1]:
-                    pre_content = ''
-            
-            after_content = ''
-            current_str_index = inv_new_content_dict[current_text]
-            current_key_index = dict_keys_index[current_str_index]
-            while current_key_index < len(keys) and new_content_dict[keys[current_key_index]] == current_text:
-                current_key_index = current_key_index+1
-            if current_key_index == len(keys):
-                after_content = ''
+                    break
+                # 只在同一幕中找
+                new_str_index = keys[new_current_key_index]
+                current_str_indexs = current_str_index.split('_')
+                new_str_indexs = new_str_index.split('_')
+                # 跨剧本，停止寻找
+                if current_str_indexs[0] != new_str_indexs[0]:
+                    break
+                # 跨幕，停止寻找
+                if current_str_indexs[1] != new_str_indexs[1]:
+                    break
+                new_pre_content = new_content_dict[keys[new_current_key_index]]
+                if str(new_pre_content) == 'nan':
+                    new_pre_content = '无'
+                if str(current_character) == 'nan':
+                    break
+                if num == 0 or current_character in new_pre_content:
+                    lcs_lst.append(new_pre_content)
+                    num = num+1
+                pre_current_key_index = new_current_key_index
+                pre_current_key_text = new_pre_content
+                if num == 3:
+                    break
+            lcs_lst.reverse()
+            if not lcs_lst:
+                pre_content = '无'
             else:
-                after_content = new_content_dict[keys[current_key_index]]
-            #找到前面去重之后的语句内容
+                pre_content = ''.join(lcs_lst)
+            # 统计有效上文长度
             
-            if after_content != '':
-                new_str_index = keys[current_key_index]
-                current_str_index = current_str_index.split('_')
-                new_str_index = new_str_index.split('_')
-                if current_str_index[0] != new_str_index[0]:
-                    after_content = ''
-                if current_str_index[1] != new_str_index[1]:
-                    after_content = ''
+            #print('pre_content = ')
+            #print(pre_content)
+            #print('current_text = ')
+            #print(current_text)
             
             if str(current_character) == 'nan':
                 current_character = '无'
-            if pre_content == '':
-                pre_content = '无'
-            if after_content == '':
-                after_content = '无'
-            
             current_character_token = tokenizer.tokenize(current_character)
             pre_token = tokenizer.tokenize(pre_content)
-            after_token = tokenizer.tokenize(after_content)
-            current_token = ["[CLS]"]+pre_token+["[SEP]"]+current_token+["[SEP]"]+after_token+["[SEP]"]+current_character_token+["[SEP]"]
-
+            
+            #current_token = ["[CLS]"]+current_token+["[SEP]"]+current_character_token+["[SEP]"]
+            #for data1 in lcs_lst:
+            #    new_token = tokenizer.tokenize(data1)
+            #    current_token = current_token+new_token+["[SEP]"]
+            #current_token = ["[CLS]"] + current_token + ["[SEP]"] + current_character_token + ["[SEP]"]
+            current_token = ["[CLS]"]+pre_token+["[SEP]"]+current_token+["[SEP]"]+current_character_token+["[SEP]"]
+            #if len(current_token) > 1:
+                #print('pre_text:\t', pre_content, len(pre_content))
+                #pre_content_lengths.append(len(current_token))
             current_id = tokenizer.convert_tokens_to_ids(current_token)            
             current_id = self.sequence_padding(current_id)
             token_data.append(current_token)
