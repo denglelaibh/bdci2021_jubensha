@@ -108,12 +108,10 @@ class ClassificationDataset(Dataset):
         self.text = text
         self.maxlen = maxlen
         self.characters = characters
-        #self.label = [label1,label2,label3,label4,label5,label6]
         token_data,token_id,segment_id,mask_id = [],[],[],[]
         #sequence填充可以最后统一实现
         for index in tqdm(range(len(self.text))):
             current_text = text[index]
-            #print('current_text:\t', current_text, len(current_text))
             current_character = characters[index]
             current_str_index = inv_new_content_dict[current_text]
             current_str_index_bak = inv_new_content_dict[current_text]
@@ -219,11 +217,6 @@ class ClassificationModel(nn.Module):
         #self.embedding = nn.Embedding(30522,768)
         self.model = model
         self.fc = nn.Linear(config.embedding_size,n_labels)
-        #self.fc1 = nn.Linear(config.embedding_size,128)
-        #self.activation = F.relu
-        #self.dropout = nn.Dropout(0.2)
-        #self.activation = F.tanh
-        #self.fc2 = nn.Linear(128,n_labels)
         
     def forward(self,input_ids):
         #outputs = self.embedding(input_ids)
@@ -233,12 +226,7 @@ class ClassificationModel(nn.Module):
         if mask_ids is not None:
             mask_ids = mask_ids[:,:,None].float()
             output -= 1e-12*(1.0-mask_ids)
-        #output = self.dropout(output)
         output = output[:,0]
-        #output = self.fc1(output)
-        #output = self.activation(output)
-        #output = self.dropout(output)
-        #output = self.fc2(output)
         output = self.fc(output)
         return output
     #之前这里少量return outputs返回值为None
@@ -553,11 +541,6 @@ class TestDataset(Dataset):
                 pre_content = ''.join(lcs_lst)
             # 统计有效上文长度
             
-            #print('pre_content = ')
-            #print(pre_content)
-            #print('current_text = ')
-            #print(current_text)
-            
             if str(current_character) == 'nan':
                 current_character = '无'
                 
@@ -567,24 +550,13 @@ class TestDataset(Dataset):
             current_character_token = tokenizer.tokenize(current_character)
             pre_token = tokenizer.tokenize(pre_content)
             current_token = tokenizer.tokenize(current_text)
-            #current_token = ["[CLS]"]+current_token+["[SEP]"]+current_character_token+["[SEP]"]
-            #for data1 in lcs_lst:
-            #    new_token = tokenizer.tokenize(data1)
-            #    current_token = current_token+new_token+["[SEP]"]
-            #current_token = ["[CLS]"] + current_token + ["[SEP]"] + current_character_token + ["[SEP]"]
             current_token = ["[CLS]"]+current_character_token+["[SEP]"]+pre_token+["[SEP]"]+current_token+["[SEP]"]
-            #current_token = ["[CLS]"]+pre_token+["[SEP]"]+current_token+["[SEP]"]
-            #if len(current_token) > 1:
-                #print('pre_text:\t', pre_content, len(pre_content))
-                #pre_content_lengths.append(len(current_token))
-            current_id = tokenizer.convert_tokens_to_ids(current_token)            
+            current_id = tokenizer.convert_tokens_to_ids(current_token)
             current_id = self.sequence_padding(current_id)
             token_data.append(current_token)
             token_id.append(current_id)
         self.token_data = token_data
         self.token_id = token_id
-        #self.segment_id = sequence_padding(self.segment_id,maxlen)
-        #self.mask_id = sequence_padding(self.mask_id,maxlen)
         self.tensors = [torch.tensor(self.token_id,dtype=torch.long)]
         
     def __len__(self):
@@ -596,12 +568,8 @@ class TestDataset(Dataset):
     def sequence_padding(self,inputs,padding = 0):
         length = self.maxlen
         if len(inputs) > length:
-            #print('inputs = ')
-            #print(len(inputs))
             abondon = len(inputs)-length
             inputs = inputs[0:2]+inputs[3+abondon-1:]
-            #print('now current_token = ')
-            #print(len(inputs))
         outputs = []
         pad_width = (0,length-len(inputs))
         x = np.pad(inputs,pad_width,'constant',constant_values=padding)
@@ -652,7 +620,6 @@ for current_split in range(split_n):
     result_data = []
     for index in range(len(testid)):
         result_data.append([testid[index],eval_predict_label[index]])
-    #pd.DataFrame({"id":testid,"label":eval_predict_label}).to_csv("/home/xiaoguzai/代码/剧本角色情感识别/数据集/crossentropy"+str(bestpoint)+"result.csv",index=False)
     import csv
     with open(r'/home/xiaoguzai/程序/剧本角色情感识别/训练数据/多折叠_上文+五句话_nezha'+str(seed)+'_best_point='+str(bestpoint[current_split])+"result.csv", 'w') as f:
         tsv_w = csv.writer(f, delimiter='\t')
@@ -685,7 +652,6 @@ for index in range(len(result[0]['emotion'])):
     currentdata[3] = currentdata[3]/split_n
     currentdata[4] = currentdata[4]/split_n
     currentdata[5] = currentdata[5]/split_n
-    #final_result.append(currentdata)
     final_result[0].append(currentdata[0])
     final_result[1].append(currentdata[1])
     final_result[2].append(currentdata[2])

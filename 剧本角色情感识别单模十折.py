@@ -108,12 +108,10 @@ class ClassificationDataset(Dataset):
         self.text = text
         self.maxlen = maxlen
         self.characters = characters
-        #self.label = [label1,label2,label3,label4,label5,label6]
         token_data,token_id,segment_id,mask_id = [],[],[],[]
         #sequence填充可以最后统一实现
         for index in tqdm(range(len(self.text))):
             current_text = text[index]
-            #print('current_text:\t', current_text, len(current_text))
             current_character = characters[index]
             current_str_index = inv_new_content_dict[current_text]
             current_str_index_bak = inv_new_content_dict[current_text]
@@ -168,24 +166,12 @@ class ClassificationDataset(Dataset):
             if str(current_character) == 'nan':
                 current_character = '无'
                 
-            #pre_content = pre_content.replace(current_character,'主语')
-            #current_text = current_text.replace(current_character,'主语')
-            
-            #current_character = '主语'
             current_character_token = tokenizer.tokenize(current_character)
             pre_token = tokenizer.tokenize(pre_content)
             current_token = tokenizer.tokenize(current_text)
-            #current_token = ["[CLS]"]+current_token+["[SEP]"]+current_character_token+["[SEP]"]
-            #for data1 in lcs_lst:
-            #    new_token = tokenizer.tokenize(data1)
-            #    current_token = current_token+new_token+["[SEP]"]
-            #current_token = ["[CLS]"] + current_token + ["[SEP]"] + current_character_token + ["[SEP]"]
+
             current_token = ["[CLS]"]+current_character_token+["[SEP]"]+pre_token+["[SEP]"]+current_token+["[SEP]"]
-            #current_token = ["[CLS]"]+pre_token+["[SEP]"]+current_token+["[SEP]"]
-            #if len(current_token) > 1:
-                #print('pre_text:\t', pre_content, len(pre_content))
-                #pre_content_lengths.append(len(current_token))
-            current_id = tokenizer.convert_tokens_to_ids(current_token)            
+            current_id = tokenizer.convert_tokens_to_ids(current_token)
             current_id = self.sequence_padding(current_id)
             token_data.append(current_token)
             token_id.append(current_id)
@@ -305,14 +291,6 @@ for current_split in range(split_n):
     #到里面的classificationdataset才进行字符的切割以及划分
     train_loader = DataLoader(train_dataset,batch_size=16,shuffle=True)
     test_loader = DataLoader(test_dataset,batch_size=16)
-    
-    #加載模型
-    #nezha,nezhaconfig,get_data = get_model_function('nezha-base')
-    #nezha = get_data(nezha,'/home/xiaoguzai/模型/nezha-base/pytorch_model.bin')
-    #model = ClassificationModel(nezha,config,n_label)
-    #初始化模型:易漏
-    
-    
 
     
     #加載官方预训练模型
@@ -338,9 +316,6 @@ for current_split in range(split_n):
     import torch.nn.functional as F
     from torch.optim.lr_scheduler import LambdaLR
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    #model = model.to(device)
-    #optimizer = torch.optim.AdamW(model.parameters(), lr=9e-6)
-    #optimizer = torch.optim.AdamW(model.parameters(), lr=9e-6)
     optimizer = torch.optim.AdamW(model.parameters(),lr=9e-6)
     def lr_lambda(epoch):
         if epoch > 5:
