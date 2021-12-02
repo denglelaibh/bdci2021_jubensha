@@ -1,3 +1,5 @@
+# 剧本角色情感分析代码分享
+
 比赛地址：https://www.datafountain.cn/competitions/518/ranking?isRedance=0&sch=1842&page=2&stage=B
 
 比赛所需数据：链接: https://pan.baidu.com/s/1_JTn9pgGQuUs8O-Go8Mkag  密码: qbwd
