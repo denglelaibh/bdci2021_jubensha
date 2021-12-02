@@ -1,3 +1,0 @@
-from simpletransformers_reg.losses.focal_loss import FocalLoss
-from simpletransformers_reg.losses.dice_loss import DiceLoss
-from simpletransformers_reg.losses.tversky_loss import TverskyLoss
