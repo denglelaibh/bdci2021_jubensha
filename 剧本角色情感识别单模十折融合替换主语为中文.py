@@ -322,8 +322,10 @@ for current_split in range(split_n):
     #optimizer = torch.optim.AdamW(model.parameters(), lr=9e-6)
     optimizer = torch.optim.AdamW(model.parameters(),lr=9e-6)
     def lr_lambda(epoch):
-        if epoch > 5:
-            return 1
+        if epoch > 5 and epoch < 8:
+            return 0.2
+        elif epoch >= 8:
+	    return 0.1
         else:
             return 2/(epoch+1)
     scheduler = LambdaLR(optimizer, lr_lambda)
